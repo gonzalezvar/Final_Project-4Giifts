@@ -11,6 +11,7 @@ bcrypt = Bcrypt()
 #   entidad de user
 
 
+
 class User(db.Model):
     __tablename__ = "user"
 
@@ -22,7 +23,8 @@ class User(db.Model):
     profile_pic: Mapped[str] = mapped_column(String(255), nullable=True)
     first_name: Mapped[str] = mapped_column(String(80), nullable=True)
     last_name: Mapped[str] = mapped_column(String(80), nullable=True)
-    edad: Mapped[int] = mapped_column(Integer, nullable=True)
+    birth_date: Mapped[str] = mapped_column(
+        String(10), nullable=True)   # <-- ARREGLADO
 
     hobbies: Mapped[str] = mapped_column(String(255), nullable=True)
     ocupacion: Mapped[str] = mapped_column(String(120), nullable=True)
@@ -33,6 +35,7 @@ class User(db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
 
+    
     contactos = db.relationship(
         "Contactos", back_populates="user", cascade="all, delete-orphan")
     compras = db.relationship(
@@ -41,6 +44,9 @@ class User(db.Model):
         "Favorite", back_populates="user", cascade="all, delete-orphan")
     productos = db.relationship(
         "Producto", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User {self.email}>"
 
     @classmethod
     def create_new_user(self, **kwargs):
@@ -66,7 +72,7 @@ class User(db.Model):
             "profile_pic": self.profile_pic,
             "first_name": self.first_name,
             "last_name": self.last_name,
-            "edad": self.edad,
+            "birth_date": self.birth_date,
             "hobbies": self.hobbies,
             "ocupacion": self.ocupacion,
             "tipo_personalidad": self.tipo_personalidad,
@@ -74,7 +80,8 @@ class User(db.Model):
         }
 
 
-#   entidad contactos
+
+#   entidad de contactos
 
 
 class Contactos(db.Model):
@@ -84,24 +91,27 @@ class Contactos(db.Model):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.user_id"), nullable=False)
 
-    name: Mapped[str] = mapped_column(String(120))
-    gender: Mapped[str] = mapped_column(String(20))
-    birth_year: Mapped[str] = mapped_column(String(10))
-    hobbies: Mapped[str] = mapped_column(String(255))
-    ocupacion: Mapped[str] = mapped_column(String(120))
-    tipo_personalidad: Mapped[str] = mapped_column(String(120))
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    gender: Mapped[str] = mapped_column(String(20), nullable=True)
+    birth_date: Mapped[str] = mapped_column(String(10), nullable=True)
+    hobbies: Mapped[str] = mapped_column(String(255), nullable=True)
+    ocupacion: Mapped[str] = mapped_column(String(120), nullable=True)
+    tipo_personalidad: Mapped[str] = mapped_column(String(120), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     user = db.relationship("User", back_populates="contactos")
     favoritos = db.relationship(
         "Favorite", back_populates="contacto", cascade="all, delete-orphan")
 
+    def __repr__(self):
+        return f"<Contacto {self.name}>"
 
-#   entidad compras realizadas(queda para luego)
+
+
+#  entidad de compras (para despues)
 
 
 class ComprasRealizadas(db.Model):
@@ -111,14 +121,17 @@ class ComprasRealizadas(db.Model):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.user_id"), nullable=False)
 
-    articulos: Mapped[str] = mapped_column(String(255))
+    articulos: Mapped[str] = mapped_column(String(255), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     user = db.relationship("User", back_populates="compras")
+
+    def __repr__(self):
+        return f"<Compra {self.compras_realizadas_id}>"
+
 
 
 #   entidad de producto
@@ -131,17 +144,19 @@ class Producto(db.Model):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.user_id"), nullable=False)
 
-    item_url: Mapped[str] = mapped_column(String(255))
-    img_url: Mapped[str] = mapped_column(String(255))
+    item_url: Mapped[str] = mapped_column(String(255), nullable=False)
+    img_url: Mapped[str] = mapped_column(String(255), nullable=True)
 
+    user = db.relationship("User", back_populates="productos")
     favorito = db.relationship(
         "Favorite", back_populates="producto", uselist=False)
 
-    user = db.relationship("User", back_populates="productos")
+    def __repr__(self):
+        return f"<Producto {self.item_id}>"
 
 
-#   entidad de favoritos
 
+#   FAVORITE
 
 class Favorite(db.Model):
     __tablename__ = "favorite"
@@ -157,11 +172,13 @@ class Favorite(db.Model):
         ForeignKey("producto.item_id"), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     user = db.relationship("User", back_populates="favoritos")
     contacto = db.relationship("Contactos", back_populates="favoritos")
     producto = db.relationship(
         "Producto", back_populates="favorito", uselist=False)
+
+    def __repr__(self):
+        return f"<Favorite {self.favorite_id}>"

@@ -1,8 +1,8 @@
-"""empty message
+"""initial schema
 
-Revision ID: 7158e63a6104
+Revision ID: c58f709ca136
 Revises: 
-Create Date: 2025-11-30 17:55:37.328110
+Create Date: 2025-11-30 19:03:49.196259
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7158e63a6104'
+revision = 'c58f709ca136'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,7 +25,7 @@ def upgrade():
     sa.Column('profile_pic', sa.String(length=255), nullable=True),
     sa.Column('first_name', sa.String(length=80), nullable=True),
     sa.Column('last_name', sa.String(length=80), nullable=True),
-    sa.Column('edad', sa.Integer(), nullable=True),
+    sa.Column('birth_date', sa.String(length=10), nullable=True),
     sa.Column('hobbies', sa.String(length=255), nullable=True),
     sa.Column('ocupacion', sa.String(length=120), nullable=True),
     sa.Column('tipo_personalidad', sa.String(length=120), nullable=True),
@@ -45,11 +45,11 @@ def upgrade():
     sa.Column('contactos_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=120), nullable=False),
-    sa.Column('gender', sa.String(length=20), nullable=False),
-    sa.Column('birth_year', sa.String(length=10), nullable=False),
-    sa.Column('hobbies', sa.String(length=255), nullable=False),
-    sa.Column('ocupacion', sa.String(length=120), nullable=False),
-    sa.Column('tipo_personalidad', sa.String(length=120), nullable=False),
+    sa.Column('gender', sa.String(length=20), nullable=True),
+    sa.Column('birth_date', sa.String(length=10), nullable=True),
+    sa.Column('hobbies', sa.String(length=255), nullable=True),
+    sa.Column('ocupacion', sa.String(length=120), nullable=True),
+    sa.Column('tipo_personalidad', sa.String(length=120), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('contactos_id')
@@ -58,7 +58,7 @@ def upgrade():
     sa.Column('item_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('item_url', sa.String(length=255), nullable=False),
-    sa.Column('img_url', sa.String(length=255), nullable=False),
+    sa.Column('img_url', sa.String(length=255), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('item_id')
     )
