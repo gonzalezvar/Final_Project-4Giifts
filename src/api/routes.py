@@ -36,8 +36,7 @@ def create_user():
         password=data.get("password"),
         first_name=data.get("first_name"),
         last_name=data.get("last_name"),
-        profile_pic=data.get("profile_pic"),
-        fecha_nacimiento=data.get("fecha_nacimiento"),
+        birth_date=data.get("birth_date"),
         hobbies=data.get("hobbies"),
         ocupacion=data.get("ocupacion"),
         tipo_personalidad=data.get("tipo_personalidad")
