@@ -1,6 +1,11 @@
 import React, { useEffect } from "react"
-import rigoImageUrl from "../assets/img/rigo-baby.jpg";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
+import { Jumbotron } from "../components/Jumbotron.jsx";
+import Card from "../components/Card.jsx";
+
+const imageUrl1 = "src/front/assets/img/regalo.jpg";
+const button = "¡Ver producto!";
+
 
 export const Home = () => {
 
@@ -33,20 +38,45 @@ export const Home = () => {
 	}, [])
 
 	return (
-		<div className="text-center mt-5">
-			<h1 className="display-4">Hello Rigo!!</h1>
-			<p className="lead">
-				<img src={rigoImageUrl} className="img-fluid rounded-circle mb-3" alt="Rigo Baby" />
-			</p>
-			<div className="alert alert-info">
-				{store.message ? (
-					<span>{store.message}</span>
-				) : (
-					<span className="text-danger">
-						Loading message from the backend (make sure your python 🐍 backend is running)...
-					</span>
-				)}
+		<div>
+
+			<Jumbotron />
+
+			<div className='ms-5 me-5 mb-5 d-flex row gap-4 justify-content-center'>
+				<h3>Otros usuarios han seleccionado estos regalos como favorito...</h3>
+				<Card
+					imageUrl={imageUrl1}
+					title="Título imagen"
+					description="is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s"
+					button={button} />
+
+				<Card
+					imageUrl={imageUrl1}
+					title="Título imagen"
+					description="is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s"
+					button={button} />
+
+				<Card
+					imageUrl={imageUrl1}
+					title="Título imagen"
+					description="is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s"
+					button={button} />
+
+				<Card
+					imageUrl={imageUrl1}
+					title="Título imagen"
+					description="is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s"
+					button={button} />
+
+
+
 			</div>
+
+
 		</div>
+
+
+
+
 	);
 }; 
