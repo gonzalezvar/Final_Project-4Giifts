@@ -9,6 +9,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from flask_bcrypt import Bcrypt
 from api.models import bcrypt
 
+
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
@@ -57,7 +58,7 @@ def login():
         }), 400
 
     if user and user.check_psw(data.get("password")):
-        access_token = create_access_token(identity=str(user.id))
+        access_token = create_access_token(identity=str(user.user_id))
         return jsonify({
             "user": user.to_dict(),
             "token": access_token}), 200
@@ -68,17 +69,22 @@ def login():
     }), 400
 
 
-@api.route('/private', methods=['POST', 'GET'])
+@api.route('/private', methods=['GET'])
 @jwt_required()
 def msg_privado():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
-    response_body = {
+    user_id = int(get_jwt_identity())
+
+    user = db.session.execute(
+        db.select(User).where(User.user_id == user_id)
+    ).scalar_one_or_none()
+
+    if not user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    return jsonify({
         "message": "Zona exclusiva PRIVADA",
         "user": user.to_dict()
-    }
-
-    return jsonify(response_body), 200
+    }), 200
 
 
 # AGREGADOS 29-30/11
@@ -137,6 +143,16 @@ def delete_user(user_id):
 
     return jsonify({"msg": "Cuenta eliminada"}), 200
 
+# get all users endpoint agregado 01/12
+
+
+@api.route('/users/', methods=['GET'])
+def get_all_users():
+    users = db.session.execute(db.select(User)).scalars().all()
+
+    result = [user.to_dict() for user in users]
+
+    return jsonify(result), 200
 
 # # recuperacion de contraseña --- > no se exactamente como plantearlo
 # @api.route('/recover', methods=['POST'])

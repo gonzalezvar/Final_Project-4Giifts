@@ -11,7 +11,6 @@ bcrypt = Bcrypt()
 #   entidad de user
 
 
-
 class User(db.Model):
     __tablename__ = "user"
 
@@ -35,7 +34,6 @@ class User(db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
 
-    
     contactos = db.relationship(
         "Contactos", back_populates="user", cascade="all, delete-orphan")
     compras = db.relationship(
@@ -80,7 +78,6 @@ class User(db.Model):
         }
 
 
-
 #   entidad de contactos
 
 
@@ -110,7 +107,6 @@ class Contactos(db.Model):
         return f"<Contacto {self.name}>"
 
 
-
 #  entidad de compras (para despues)
 
 
@@ -131,7 +127,6 @@ class ComprasRealizadas(db.Model):
 
     def __repr__(self):
         return f"<Compra {self.compras_realizadas_id}>"
-
 
 
 #   entidad de producto
@@ -155,8 +150,7 @@ class Producto(db.Model):
         return f"<Producto {self.item_id}>"
 
 
-
-#   FAVORITE
+#   entidad de favoritos
 
 class Favorite(db.Model):
     __tablename__ = "favorite"
