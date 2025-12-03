@@ -1,22 +1,35 @@
-// Import necessary components from react-router-dom and other parts of the application.
-import { Link, useNavigate } from "react-router-dom";
-import useGlobalReducer from "../hooks/useGlobalReducer";  // Custom hook for accessing the global state.
+import { useNavigate } from "react-router-dom";
 import { createUser } from "../services";
 import styles from "./Signup.module.css";
 
 export const Signup = () => {
-  // Access the global state and dispatch function using the useGlobalReducer hook.
-  const { store, dispatch } = useGlobalReducer()
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const form = e.target;
+
+    const newUser = {
+      email: form.inputEmail.value,
+      password: form.inputPassword.value,
+      first_name: form.firstName.value,
+      last_name: form.lastName.value,
+      birth_date: form.birthDate.value,
+      hobbies: form.hobbies.value,
+      ocupacion: form.ocupacion.value,
+      tipo_personalidad: form.tipoPersonalidad.value
+    };
+
     try {
-      const newUser = {
-        email: e.target.elements.inputEmail.value,
-        password: e.target.elements.inputPassword.value
+      const resp = await createUser(newUser);
+
+      if (resp.ok) {
+        alert("Usuario creado");
+        navigate("/login");
+      } else {
+        alert("Error al crear usuario");
       }
-      const createNewUser = await createUser(newUser)
 
     } catch (err) {
       alert("Error: " + err.message);
@@ -32,7 +45,7 @@ export const Signup = () => {
           Regístrate para comenzar
         </p>
 
-      navigate("/")
+        <form onSubmit={handleSubmit}>
 
           <label className={styles.label}>Email</label>
           <input type="email" id="inputEmail" className={`form-control mb-3 ${styles.input}`} required />
@@ -62,23 +75,16 @@ export const Signup = () => {
             Crear Cuenta
           </button>
 
+        </form>
 
         <div className="text-center mt-3">
           <small>
             ¿Ya tienes una cuenta?{" "}
-            <a href="/login" className={styles.link}>Inicia sesión Aqui</a>
+            <a href="/login" className={styles.link}>Inicia sesión</a>
           </small>
         </div>
-        <div className="mb-3">
-          <label htmlFor="inputPassword" className="form-label">Password</label>
-          <input type="password" className="form-control" id="inputPassword" required />
-        </div>
-        <div className="mb-3 form-check">
-          <input type="checkbox" className="form-check-input" id="exampleCheck1" required />
-          <label className="form-check-label" htmlFor="exampleCheck1">Acepto crear usuario</label>
-        </div>
-        <button type="submit" className="btn btn-primary">Crear usuario</button>
-      </form>
+
+      </div>
     </div>
   );
 };
