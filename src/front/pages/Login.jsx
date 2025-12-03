@@ -12,8 +12,8 @@ export const Login = () => {
     e.preventDefault();
     try {
       const user = {
-        email: e.target.elements.inputEmail.value,
-        password: e.target.elements.inputPassword.value
+        email: e.target.elements.email.value,
+        password: e.target.elements.password.value
       }
       const checkUser = await checkLogin(user)
 
