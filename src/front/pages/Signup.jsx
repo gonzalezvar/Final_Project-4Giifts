@@ -80,7 +80,7 @@ export const Signup = () => {
         <div className="text-center mt-3">
           <small>
             ¿Ya tienes una cuenta?{" "}
-            <a href="/login" className={styles.link}>Inicia sesión</a>
+            <a href="/login" className={styles.link}>Inicia sesión Aqui</a>
           </small>
         </div>
 
