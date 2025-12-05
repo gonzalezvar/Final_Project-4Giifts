@@ -16,18 +16,16 @@ export const Login = () => {
         password: e.target.elements.password.value
       }
       const checkUser = await checkLogin(user)
-
-
+      const data = await checkUser.json()
+      console.log(data);
       if (checkUser.ok) {
-        const data = await checkUser.json()
-        console.log(data)
         const token = data.token;
         sessionStorage.setItem("token", token);
-        alert("Login correcto")
+        navigate("/private")
       }
-      else alert("credenciales incorrectos");
-
-      navigate("/private")
+      else {
+        alert("Error en el login: " + data.message);
+      }
 
     } catch (err) {
       console.error(err);

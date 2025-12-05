@@ -22,19 +22,14 @@ export const createUser = async (newUser) => {
 
 export const checkLogin = async (user) => {
   try {
-    const request = await fetch(`${BASE_URL}/api/login`, {
+    const response = await fetch(`${BASE_URL}/api/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(user),
     });
-    if (!request.ok) {
-      const errorData = await request.json();
-      throw new Error(errorData.detail);
-    }
-    console.log(request);
-    return request;
+    return response;
   } catch (error) {
     throw error;
   }
@@ -42,8 +37,7 @@ export const checkLogin = async (user) => {
 
 export const getPrivateData = async () => {
   const token = sessionStorage.getItem("token");
-
-  const response = await fetch("${BASE_URL}/api/private", {
+  const response = await fetch(`${BASE_URL}/api/private`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
