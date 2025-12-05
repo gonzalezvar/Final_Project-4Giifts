@@ -29,6 +29,11 @@ export const checkLogin = async (user) => {
       },
       body: JSON.stringify(user),
     });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail);
+    }
+    console.log(response);
     return response;
   } catch (error) {
     throw error;
