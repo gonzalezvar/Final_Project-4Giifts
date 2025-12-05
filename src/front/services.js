@@ -1,14 +1,17 @@
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+const base_url= import.meta.env.VITE_BACKEND_URL
 
 export const createUser = async (newUser) => {
   try {
-    const request = await fetch(`${BASE_URL}/api/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newUser),
-    });
+    const request = await fetch(
+      `${base_url}/api/signup`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newUser),
+      }
+    );
     if (!request.ok) {
       const errorData = await request.json();
       throw new Error(errorData.detail);
