@@ -1,6 +1,12 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
+
+import os
+import google.generativeai as genai
+import requests
+import json
+from api.models import Contactos
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User
 from api.utils import generate_sitemap, APIException
@@ -8,6 +14,8 @@ from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 from api.models import bcrypt
+
+
 
 
 api = Blueprint('api', __name__)
@@ -215,3 +223,28 @@ def get_all_users():
 #     mail.send(msg)
 
 #     return jsonify({"msg": "Correo enviado si el usuario existe"}), 200
+
+
+# endpoint peticion de contactos del user
+@api.route('/contacts', methods=['GET'])
+@jwt_required()
+def get_user_contacts():
+    current_user_id = int(get_jwt_identity())
+    
+    user_contacts = db.session.execute(
+        db.select(Contactos).where(Contactos.user_id == current_user_id)
+    ).scalars().all()
+
+    result = []
+    for contact in user_contacts:
+        result.append({
+            "id": contact.contactos_id,  
+            "name": contact.name,
+            "relation": contact.relation,
+            "img": contact.url_img,
+            "birth_date": contact.birth_date,
+            "hobbies": contact.hobbies,
+            "personality": contact.tipo_personalidad
+        })
+
+    return jsonify(result), 200

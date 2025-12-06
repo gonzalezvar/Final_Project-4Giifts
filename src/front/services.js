@@ -55,3 +55,16 @@ export const getPrivateData = async () => {
 
   return response;
 };
+
+
+export const getUserContacts = async () => {
+  const token = sessionStorage.getItem("token");
+  const response = await fetch(`${base_url}/api/contacts`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+  });
+  return response;
+};
