@@ -8,6 +8,10 @@ from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 from api.models import bcrypt
+from flask_mail import Message
+from datetime import timedelta
+from app import mail
+import os
 
 
 api = Blueprint('api', __name__)
@@ -172,46 +176,59 @@ def get_all_users():
 
     return jsonify(result), 200
 
-# # recuperacion de contraseña --- > no se exactamente como plantearlo
-# @api.route('/recover', methods=['POST'])
-# def recover_password():
-#     data = request.get_json()
-#     email = data.get("email")
-#     new_password = data.get("new_password")
+@api.route("/recover/request", methods=["POST"])
+def request_recover():
+    data = request.get_json()
+    email = data.get("email")
 
-#     user = User.find_by_email(email)
+    user = User.find_by_email(email)
 
-#     if not user:
-#         return jsonify({"msg": "Usuario no encontrado"}), 404
+    # Siempre devolvemos lo mismo para no revelar si el email existe
+    msg_ok = {"msg": "Si el correo existe, recibirás un email para restablecer tu contraseña"}
 
-#     hashed = bcrypt.generate_password_hash(new_password).decode("utf-8")
-#     user.password = hashed
-#     db.session.commit()
+    if not user:
+        return jsonify(msg_ok), 200
 
-#     return jsonify({"msg": "Contraseña actualizada"}), 200
+    # Crear token temporal (15 min)
+    token = create_access_token(
+        identity=str(user.user_id),
+        expires_delta=timedelta(minutes=15)
+    )
 
-# @api.route('/recover/request', methods=['POST'])
-# def request_recover():
-#     data = request.get_json()
-#     email = data.get("email")
+    reset_link = f"{os.getenv('FRONTEND_URL')}/reset-password?token={token}"
 
-#     user = User.find_by_email(email)
-#     if not user:
-#         return jsonify({"msg": "Si el correo existe, recibirá un email"}), 200
+    # Enviar correo
+    msg = Message(
+        subject="Recuperación de contraseña",
+        recipients=[email],
+    )
+    msg.body = f"""
+Hola, has solicitado restablecer tu contraseña.
 
-#     # generar token temporal
-#     token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(minutes=15))
+Haz clic en el siguiente enlace para continuar:
 
-#     reset_link = f"{os.getenv('FRONTEND_URL')}/reset-password?token={token}"
+{reset_link}
 
-#     # enviar correo
-#     msg = Message(
-#         subject="Recuperar contraseña",
-#         sender=os.getenv("EMAIL_USER"),
-#         recipients=[email]
-#     )
-#     msg.body = f"Hola, haz clic en este enlace para cambiar tu contraseña:\n{reset_link}"
+Este enlace expira en 15 minutos.
+"""
+    mail.send(msg)
 
-#     mail.send(msg)
+    return jsonify(msg_ok), 200
 
-#     return jsonify({"msg": "Correo enviado si el usuario existe"}), 200
+@api.route("/recover/reset", methods=["POST"])
+@jwt_required()
+def reset_password():
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    new_password = data.get("password")
+
+    user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    # Encriptar nueva contraseña
+    user.password = bcrypt.generate_password_hash(new_password).decode("utf-8")
+    db.session.commit()
+
+    return jsonify({"msg": "Contraseña actualizada con éxito"}), 200
