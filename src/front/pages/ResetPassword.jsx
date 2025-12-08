@@ -1,19 +1,20 @@
 import { useState } from "react";
+import styles from "./ResetPassword.module.css";
 
 export const ResetPassword = () => {
     const [password, setPassword] = useState("");
     const [status, setStatus] = useState("");
     const [success, setSuccess] = useState(false);
 
-    // 1. Obtener token desde la URL
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
 
-    // Si no hay token, no debería continuar
     if (!token) {
         return (
-            <div className="container mt-5 text-center">
-                <h3>Token inválido o expirado.</h3>
+            <div className={styles.wrapper}>
+                <div className={styles.card}>
+                    <h3 className={styles.title}>Token inválido o expirado.</h3>
+                </div>
             </div>
         );
     }
@@ -39,8 +40,7 @@ export const ResetPassword = () => {
             if (response.ok) {
                 setSuccess(true);
                 setStatus("Contraseña actualizada correctamente. Serás redirigido al login.");
-                
-                // redirigir a login después de 2s
+
                 setTimeout(() => {
                     window.location.href = "/login";
                 }, 2000);
@@ -53,32 +53,37 @@ export const ResetPassword = () => {
     };
 
     return (
-        <div className="container mt-5" style={{ maxWidth: "400px" }}>
-            <h2 className="text-center mb-4">Restablecer contraseña</h2>
-
-            {!success && (
-                <form onSubmit={handleSubmit}>
-                    <label className="form-label">Nueva contraseña</label>
-                    <input
-                        type="password"
-                        className="form-control mb-3"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Nueva contraseña"
-                        required
-                    />
-
-                    <button className="btn btn-success w-100" type="submit">
-                        Guardar nueva contraseña
-                    </button>
-                </form>
-            )}
-
-            {status && (
-                <p className={`text-center mt-3 ${success ? "text-success" : "text-danger"}`}>
-                    {status}
+        <div className={styles.wrapper}>
+            <div className={styles.card}>
+                <h2 className={styles.title}>Restablecer contraseña</h2>
+                <p className={styles.subtitle}>
+                    Escribe tu nueva contraseña para acceder de nuevo a tu cuenta.
                 </p>
-            )}
+
+                {!success && (
+                    <form onSubmit={handleSubmit}>
+                        <label className={styles.label}>Nueva contraseña</label>
+                        <input
+                            type="password"
+                            className={styles.input}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Nueva contraseña"
+                            required
+                        />
+
+                        <button className={styles.submitBtn} type="submit">
+                            Guardar nueva contraseña
+                        </button>
+                    </form>
+                )}
+
+                {status && (
+                    <p className={success ? styles.success : styles.error}>
+                        {status}
+                    </p>
+                )}
+            </div>
         </div>
     );
 };
