@@ -1,7 +1,6 @@
 const base_url = import.meta.env.VITE_BACKEND_URL;
 
 export const createUser = async (newUser) => {
-  try {
     const request = await fetch(`${base_url}/api/signup`, {
       method: "POST",
       headers: {
