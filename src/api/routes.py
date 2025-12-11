@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone, timedelta
-from api.models import db, User, Contactos, ImagenProducto, bcrypt
+from api.models import db, User, Contactos, bcrypt
 from flask_mail import Message
 from api.extensions import mail
 
