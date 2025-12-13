@@ -3,7 +3,7 @@
 }
 
 .pers-secondary-btn-color {
-    background: #F75270;;
+    background: #F75270;
 }
 
 .pers-tertiary-btn-color {
@@ -42,3 +42,20 @@
     z-index: 20;
 }
 
+.instruction-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.instruction-card:hover {
+    background-color: #DC143C;
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+}
+
+.instruction-card:hover,
+.instruction-card:hover h5,
+.instruction-card:hover p,
+.instruction-card:hover i {
+    color: #ffffff;
+}
