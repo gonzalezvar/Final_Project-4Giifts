@@ -19,7 +19,7 @@ const Dashboard = () => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [editingContactId, setEditingContactId] = useState(null);
-  
+
   const [reminders] = useState([
     { id: 1, title: 'Cumpleaños', subtitle: '(Pronto)', icon: '🎂' },
     { id: 2, title: 'Navidad', subtitle: '(Se acerca)', icon: '🎄' },
@@ -79,22 +79,22 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (activeContact) {
-        getContactFavorites(activeContact.id).then(res => {
-            if(res.ok) return res.json();
-            return [];
-        }).then(data => setActiveFavorites(data));
-        
-        if(giftsSectionRef.current) {
-            setTimeout(() => giftsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        }
+      getContactFavorites(activeContact.id).then(res => {
+        if (res.ok) return res.json();
+        return [];
+      }).then(data => setActiveFavorites(data));
+
+      if (giftsSectionRef.current) {
+        setTimeout(() => giftsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      }
     }
   }, [activeContact, selectedContactId]);
 
   const handleDeleteFav = async (favId) => {
-      const res = await deleteFavorite(favId);
-      if(res.ok) {
-          setActiveFavorites(activeFavorites.filter(f => f.favorite_id !== favId));
-      }
+    const res = await deleteFavorite(favId);
+    if (res.ok) {
+      setActiveFavorites(activeFavorites.filter(f => f.favorite_id !== favId));
+    }
   };
 
   const normalize = (t) => t ? t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
@@ -238,32 +238,32 @@ const Dashboard = () => {
                     <small className="text-muted d-block mb-2">Relación: {activeContact.relation}</small>
                   </div>
                 </div>
-                
+
                 {activeFavorites.length > 0 ? (
-                    <div className="row g-3">
+                  <div className="row g-3">
                     {activeFavorites.map(g => (
-                        <div key={g.favorite_id} className="col-12 col-sm-6 col-lg-3">
+                      <div key={g.favorite_id} className="col-12 col-sm-6 col-lg-3">
                         <div className={`${styles["gift-item-card"]} h-100 d-flex flex-column`}>
-                            <button className={styles["btn-delete-gift"]} onClick={() => handleDeleteFav(g.favorite_id)}>X</button>
-                            <img src={g.img} className={styles["gift-img"]} alt="" onError={(e)=>e.target.src="https://via.placeholder.com/300"}/>
-                            <div className="p-3 flex-grow-1 d-flex flex-column">
+                          <button className={styles["btn-delete-gift"]} onClick={() => handleDeleteFav(g.favorite_id)}>X</button>
+                          <img src={g.img} className={styles["gift-img"]} alt="" onError={(e) => e.target.src = "https://via.placeholder.com/300"} />
+                          <div className="p-3 flex-grow-1 d-flex flex-column">
                             <h6 className="small fw-bold">{g.name}</h6>
                             <p className="small mb-2 fw-bold text-muted">{g.price}</p>
                             <a href={g.link} target="_blank" rel="noreferrer" className={`btn ${styles["btn-buy"]} mt-auto`}>Comprar</a>
-                            </div>
+                          </div>
                         </div>
-                        </div>
+                      </div>
                     ))}
-                    </div>
+                  </div>
                 ) : (
-                    <div className="text-center py-5">
-                        <h5 className="text-muted mb-3">No hay favoritos guardados para {activeContact.name}</h5>
-                        <button className={`btn ${styles["btn-ideas"]}`} onClick={() => navigate(`/generar-ideas/${activeContact.id}`)}>
-                            Generar ideas para regalarle a {activeContact.name}
-                        </button>
-                    </div>
+                  <div className="text-center py-5">
+                    <h5 className="text-muted mb-3">No hay favoritos guardados para {activeContact.name}</h5>
+                    <button className={`btn ${styles["btn-ideas"]}`} onClick={() => navigate(`/generar-ideas/${activeContact.id}`)}>
+                      Generar ideas para regalarle a {activeContact.name}
+                    </button>
+                  </div>
                 )}
-                
+
               </div>
             </div>
           )}
@@ -287,10 +287,10 @@ const Dashboard = () => {
                   </div>
                   <div className="row">
                     <div className="col-6 mb-3">
-                        <label className="form-label">Género</label>
-                        <select className="form-select" name="gender" value={formData.gender} onChange={handleInputChange}>
-                            <option value="">Masculino/Femenino/Otro</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option>
-                        </select>
+                      <label className="form-label">Género</label>
+                      <select className="form-select" name="gender" value={formData.gender} onChange={handleInputChange}>
+                        <option value="">Masculino/Femenino/Otro</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option>
+                      </select>
                     </div>
                     <div className="col-6 mb-3"><label className="form-label">Ocupación</label><input type="text" className="form-control" name="ocupacion" placeholder="Ej: Arquitecto, Estudiante..." value={formData.ocupacion} onChange={handleInputChange} /></div>
                   </div>
