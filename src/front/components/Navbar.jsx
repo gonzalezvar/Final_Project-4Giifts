@@ -85,7 +85,7 @@ export const Navbar = () => {
                             </span>
 
                             <img
-                                src={user.profile_pic || "https://via.placeholder.com/40"}
+                                src={user.profile_pic || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.first_name}`}
                                 className="rounded-circle avatar-clickable"
                                 width="40"
                                 height="40"

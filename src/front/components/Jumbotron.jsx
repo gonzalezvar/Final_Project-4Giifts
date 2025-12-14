@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export const Jumbotron = () => (
 	<div>
       <div className="jumbotron m-5 p-5 rounded-3 text-center pers-bg-img-jumbotron">
@@ -6,7 +8,9 @@ export const Jumbotron = () => (
         <hr className="my-4" />
         <p>Cuando las palabras no bastan, un regalo lo dice todo!</p>
         <p className="lead d-flex justify-content-center mt-5 pers-shadow-none">
-          <a className="btn btn-primary btn-lg pers-secondary-btn-color border-0" href="/login" role="button">¡Regalar!</a>
+          <Link to="/login">
+          <button className="btn btn-primary btn-lg pers-secondary-btn-color border-0">¡Regalar!</button>
+        </Link>
         </p>
       </div>
     </div>
