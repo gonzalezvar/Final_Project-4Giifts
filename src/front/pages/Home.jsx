@@ -96,7 +96,7 @@ export const Home = () => {
 					{
 						favoriteUser.length > 0 ? (
 							favoriteUser.map((fav, index) => (
-								<SwiperSlide key={index} className="d-flex justify-content-center">
+								<SwiperSlide key={index} className="d-flex justify-content-center h-auto my-1">
 									<Card
 										imageUrl={fav.img}
 										title={fav.name}
@@ -107,7 +107,7 @@ export const Home = () => {
 								</SwiperSlide>
 							))
 
-						) : <SwiperSlide className="d-flex justify-content-center">
+						) : <SwiperSlide className="d-flex justify-content-center h-auto my-1">
 									<Card
 										imageUrl='https://images.unsplash.com/photo-1599623560574-39d485900c95?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8dG95c3xlbnwwfHwwfHx8MA%3D%3D'
 										title='Los mejores juguetes'
