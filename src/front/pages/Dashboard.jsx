@@ -29,50 +29,55 @@ const Dashboard = () => {
   const [reminders, setReminders] = useState([]);
 
 
-  useEffect(() => {
-    const loadReminders = async () => {
-      try {
-        const res = await getReminders();
-        if (res.ok) {
-          const data = await res.json();
-          setReminders(data);
-        }
-      } catch (err) {
-        console.error("Error cargando recordatorios", err);
-      }
-    };
 
+
+
+  const loadReminders = async () => {
+    try {
+      const res = await getReminders();
+      if (res.ok) {
+        const data = await res.json();
+        setReminders(data);
+      }
+    } catch (err) {
+      console.error("Error cargando recordatorios", err);
+    }
+  };
+
+  useEffect(() => {
     loadReminders();
   }, []);
+
 
   const handleCreateReminder = async (data) => {
     try {
       const res = await createReminder(data);
-      if (res.ok) {
-        const newReminder = await res.json();
-        setReminders((prev) => [...prev, newReminder]);
-      }
+      if (!res.ok) return;
+
+
+      await loadReminders();
     } catch (err) {
       console.error("Error creando recordatorio", err);
     }
   };
 
+
   const handleDeleteReminder = async (id) => {
     try {
       await deleteReminder(id);
-      setReminders((prev) => prev.filter((r) => r.id !== id));
+
+
+      await loadReminders();
     } catch (err) {
       console.error("Error eliminando recordatorio", err);
     }
   };
 
 
+
   const [selectedContactId, setSelectedContactId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [dragTranslate, setDragTranslate] = useState(0);
+
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -103,18 +108,7 @@ const Dashboard = () => {
   }, [reminders.length]);
 
   const stopAuto = () => clearInterval(intervalRef.current);
-  const handleDragStart = (e) => { setIsDragging(true); setStartX(e.clientX || e.touches[0].clientX); stopAuto(); };
-  const handleDragMove = (e) => {
-    if (!isDragging) return;
-    const x = e.clientX || e.touches[0].clientX;
-    if (trackRef.current) setDragTranslate(((x - startX) / trackRef.current.offsetWidth) * 100);
-  };
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    if (dragTranslate < -5) setCurrentSlide(p => (p + 1) % reminders.length);
-    else if (dragTranslate > 5) setCurrentSlide(p => (p - 1 + reminders.length) % reminders.length);
-    setDragTranslate(0);
-  };
+
 
   const activeContact = contacts.find(c => c.id.toString() === selectedContactId.toString());
 
