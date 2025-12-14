@@ -59,3 +59,37 @@
 .instruction-card:hover i {
     color: #ffffff;
 }
+
+
+.nav-link-custom {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.15rem;
+    color: #F75270;              
+    margin-right: 16px;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-link-custom:hover {
+    transform: scale(1.12);
+    color: #DC143C;          
+}
+
+
+.dropdown-user {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-user:hover {
+    background-color: #DC143C;
+    color: #ffffff;
+}
+
+.avatar-clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.avatar-clickable:hover {
+    transform: scale(1.12);
+}

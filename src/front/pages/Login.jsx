@@ -21,7 +21,7 @@ export const Login = () => {
       if (checkUser.ok) {
         const token = data.token;
         sessionStorage.setItem("token", token);
-        window.dispatchEvent(new Event("storage")); // añado esto para que funcione la parte del navbar.
+        window.dispatchEvent(new Event("auth-change")); // añado esto para que funcione la parte del navbar.
         navigate("/dashboard")
       }
       else {

@@ -1,144 +1,127 @@
-/*import { Link } from "react-router-dom";
-
-export const Navbar = () => {
-
-    return (
-        <nav className="navbar pers-bg-color">
-            <div className="container">
-                <Link to="/">
-                    <span className="navbar-brand mb-0 h1"><img src="public/Logo_solo_4giifts-removebg-preview (1).png" width="10%" height="10%" alt="" /></span>
-                </Link>
-                <div className="ml-auto d-flex gap-2">
-                    <Link to="/signup">
-                        <button className="btn btn-secondary pers-secondary-btn-color border-0">Registrar</button>
-                    </Link>
-                    <Link to="/login">
-                        <button className="btn btn-primary pers-primary-btn-color border-0">Login</button>
-                    </Link>
-                </div>
-            </div>
-        </nav>
-    );
-};
-*/
-
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { getPrivateData } from "../services";
 
 export const Navbar = () => {
     const [isLogged, setIsLogged] = useState(false);
-    const [open, setOpen] = useState(false);
+    const [user, setUser] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const checkLogin = () => {
+        const checkAuth = async () => {
             const token = sessionStorage.getItem("token");
-            setIsLogged(!!token);
+            if (!token) {
+                setIsLogged(false);
+                setUser(null);
+                return;
+            }
+
+            setIsLogged(true);
+            const resp = await getPrivateData();
+            if (resp.ok) {
+                const data = await resp.json();
+                setUser(data.user);
+            }
         };
 
-        checkLogin();
-
-
-        window.addEventListener("storage", checkLogin);
-
-        return () => window.removeEventListener("storage", checkLogin);
+        checkAuth();
+        window.addEventListener("auth-change", checkAuth);
+        return () => window.removeEventListener("auth-change", checkAuth);
     }, []);
 
     const handleLogout = () => {
         sessionStorage.removeItem("token");
-        setIsLogged(false);
+        window.dispatchEvent(new Event("auth-change"));
         navigate("/");
-
-        // Forzar actualización en toda la app
-        window.dispatchEvent(new Event("storage"));
-
-        setOpen(false);
     };
 
     return (
         <nav className="navbar pers-bg-color">
             <div className="container">
 
-                <Link to="/">
-                    <span className="navbar-brand mb-0 h1">
-                        <img
-                            src="public/Logo_solo_4giifts-removebg-preview (1).png"
-                            width="10%"
-                            height="10%"
-                            alt=""
-                        />
-                    </span>
+                {/* Logo */}
+                <Link to="/" className="d-flex align-items-center gap-2">
+                    <img
+                        src="public/Logo_solo_4giifts-removebg-preview (1).png"
+                        height="40"
+                        alt="Logo"
+                    />
                 </Link>
 
-                <div className="ml-auto d-flex gap-2 align-items-center">
+                <div className="ms-auto d-flex align-items-center gap-3">
 
-                    {/* --- OPCIONES NO LOGUEADO --- */}
+                    {/* NO LOGUEADO */}
                     {!isLogged && (
                         <>
                             <Link to="/signup">
-                                <button className="btn btn-secondary pers-secondary-btn-color border-0">
+                                <button className="btn pers-secondary-btn-color border-0">
                                     Registrar
                                 </button>
                             </Link>
-
                             <Link to="/login">
-                                <button className="btn btn-primary pers-primary-btn-color border-0">
+                                <button className="btn pers-primary-btn-color border-0">
                                     Login
                                 </button>
                             </Link>
                         </>
                     )}
 
-                    {/* --- OPCIONES LOGUEADO --- */}
-                    {isLogged && (
-                        <div className="position-relative">
+                    {/* LOGUEADO */}
+                    {isLogged && user && (
+                        <div className="d-flex align-items-center gap-4">
 
-                            {/* Icono usuario */}
-                            <div
-                                className="d-flex justify-content-center align-items-center rounded-circle bg-dark text-white"
-                                style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    cursor: "pointer",
-                                    userSelect: "none"
-                                }}
-                                onClick={() => setOpen(!open)}
+                            <span
+                                className="nav-link-custom"
+                                onClick={() => navigate("/")}
                             >
-                                U
-                            </div>
+                                Home
+                            </span>
 
-                            {/* Dropdown */}
-                            {open && (
-                                <div
-                                    className="position-absolute bg-white p-2 shadow-sm"
-                                    style={{
-                                        right: 0,
-                                        top: "45px",
-                                        borderRadius: "6px",
-                                        cursor: "pointer",
-                                        minWidth: "160px"
-                                    }}
+                            <span
+                                className="nav-link-custom"
+                                onClick={() => navigate("/dashboard")}
+                            >
+                                Dashboard
+                            </span>
+
+                            <img
+                                src={user.profile_pic || "https://via.placeholder.com/40"}
+                                className="rounded-circle avatar-clickable"
+                                width="40"
+                                height="40"
+                                alt="avatar"
+                                onClick={() => navigate("/dashboard")}
+                            />
+
+
+                            <div className="dropdown">
+                                <button
+                                    className="btn pers-secondary-btn-color dropdown-toggle fw-semibold dropdown-user"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
                                 >
-                                    <div
-                                        className="dropdown-item mb-1"
-                                        onClick={() => navigate("/dashboard")}
-                                    >
-                                        Dashboard
-                                    </div>
+                                    {user.first_name}
+                                </button>
 
-                                    <div
-                                        className="dropdown-item mb-1"
-                                        onClick={() => navigate("/Gestion")}
-                                    >
-                                        Gestión de usuario
-                                    </div>
-
-                                    <div className="dropdown-item" onClick={handleLogout}>
-                                        Cerrar sesión
-                                    </div>
-                                </div>
-                            )}
-
+                                <ul className="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <button
+                                            className="dropdown-item"
+                                            onClick={() => navigate("/profile/edit")}
+                                        >
+                                            Gestión de usuario
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button
+                                            className="dropdown-item text-danger"
+                                            onClick={handleLogout}
+                                        >
+                                            Cerrar sesión
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
 
                         </div>
                     )}
