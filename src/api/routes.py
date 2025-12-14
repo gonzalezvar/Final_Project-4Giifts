@@ -487,7 +487,7 @@ def get_shared_favorites(token):
         })
     
     return jsonify({
-        "user_name": f"{user.first_name} {user.last_name or ''}",
+        "user_name": f"{user.first_name}",
         "user_img": user.profile_pic,
         "products": products
     }), 200
