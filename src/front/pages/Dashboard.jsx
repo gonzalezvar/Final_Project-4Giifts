@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import styles from "./dashboard.module.css";
 import { getPrivateData, getUserContacts, createContact, updateContact, getContactFavorites, deleteFavorite } from '../services';
 import RemindersCarousel from "../components/RemindersCarousel";
+import {
+  getReminders,
+  createReminder,
+  deleteReminder,
+} from "../services";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const giftsSectionRef = useRef(null);
+  const trackRef = useRef(null);
+  const intervalRef = useRef(null);
 
-  const reminders = [
-    { id: 1, title: "Cumpleaños", subtitle: "(Pronto)", icon: "🎂" },
-    { id: 2, title: "Navidad", subtitle: "(Se acerca)", icon: "🎄" },
-    { id: 3, title: "San Valentín", subtitle: "(Próximo)", icon: "❤️" },
-  ];
-  const [userReminders, setUserReminders] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [activeFavorites, setActiveFavorites] = useState([]);
 
@@ -25,8 +26,53 @@ const Dashboard = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [editingContactId, setEditingContactId] = useState(null);
 
+  const [reminders, setReminders] = useState([]);
+
+
+  useEffect(() => {
+    const loadReminders = async () => {
+      try {
+        const res = await getReminders();
+        if (res.ok) {
+          const data = await res.json();
+          setReminders(data);
+        }
+      } catch (err) {
+        console.error("Error cargando recordatorios", err);
+      }
+    };
+
+    loadReminders();
+  }, []);
+
+  const handleCreateReminder = async (data) => {
+    try {
+      const res = await createReminder(data);
+      if (res.ok) {
+        const newReminder = await res.json();
+        setReminders((prev) => [...prev, newReminder]);
+      }
+    } catch (err) {
+      console.error("Error creando recordatorio", err);
+    }
+  };
+
+  const handleDeleteReminder = async (id) => {
+    try {
+      await deleteReminder(id);
+      setReminders((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error("Error eliminando recordatorio", err);
+    }
+  };
+
+
   const [selectedContactId, setSelectedContactId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [dragTranslate, setDragTranslate] = useState(0);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -50,7 +96,25 @@ const Dashboard = () => {
     loadData();
   }, [navigate]);
 
+  useEffect(() => {
+    const start = () => { intervalRef.current = setInterval(() => setCurrentSlide(p => (p + 1) % reminders.length), 3000); };
+    start();
+    return () => clearInterval(intervalRef.current);
+  }, [reminders.length]);
 
+  const stopAuto = () => clearInterval(intervalRef.current);
+  const handleDragStart = (e) => { setIsDragging(true); setStartX(e.clientX || e.touches[0].clientX); stopAuto(); };
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    const x = e.clientX || e.touches[0].clientX;
+    if (trackRef.current) setDragTranslate(((x - startX) / trackRef.current.offsetWidth) * 100);
+  };
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    if (dragTranslate < -5) setCurrentSlide(p => (p + 1) % reminders.length);
+    else if (dragTranslate > 5) setCurrentSlide(p => (p - 1 + reminders.length) % reminders.length);
+    setDragTranslate(0);
+  };
 
   const activeContact = contacts.find(c => c.id.toString() === selectedContactId.toString());
 
@@ -189,26 +253,14 @@ const Dashboard = () => {
             )}
           </div>
 
-          <RemindersCarousel
-            reminders={reminders}
-            contacts={contacts}
-            userReminders={userReminders}
-            onCreateReminder={async (data) => {
-              const res = await createReminder(data);
-              if (res.ok) {
-                const saved = await res.json();
-                setUserReminders((prev) => [...prev, saved]);
-              }
-            }}
-            onDeleteReminder={async (id) => {
-              const res = await deleteReminder(id);
-              if (res.ok) {
-                setUserReminders((prev) =>
-                  prev.filter((r) => r.id !== id)
-                );
-              }
-            }}
-          />
+          <div id="recordatorios" className="mb-2 pt-3">
+            <RemindersCarousel
+              reminders={reminders}
+              contacts={contacts}
+              onCreateReminder={handleCreateReminder}
+              onDeleteReminder={handleDeleteReminder}
+            />
+          </div>
 
           {activeContact && (
             <div ref={giftsSectionRef} className={`${styles["saved-gifts-section"]} shadow`}>

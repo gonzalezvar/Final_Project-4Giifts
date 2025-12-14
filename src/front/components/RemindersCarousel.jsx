@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "../pages/dashboard.module.css";
 
 const REMINDER_REASONS = [
@@ -14,10 +14,22 @@ const REMINDER_REASONS = [
     "Otro",
 ];
 
+const ICONS = {
+    Aniversario: "💍",
+    Cumpleaños: "🎂",
+    Navidad: "🎄",
+    "San Valentín": "❤️",
+    "Día de la Madre": "🌷",
+    "Día del Padre": "👔",
+    Graduación: "🎓",
+    Boda: "💒",
+    Nacimiento: "👶",
+    Otro: "⏰",
+};
+
 const RemindersCarousel = ({
-    reminders,
-    contacts,
-    userReminders,
+    reminders = [],
+    contacts = [],
     onCreateReminder,
     onDeleteReminder,
 }) => {
@@ -30,64 +42,60 @@ const RemindersCarousel = ({
     const [dragTranslate, setDragTranslate] = useState(0);
 
     const [showModal, setShowModal] = useState(false);
+    const [selectedContact, setSelectedContact] = useState(null);
+
     const [formData, setFormData] = useState({
-        contactId: "",
-        date: "",
-        reason: "",
+        reminder_date: "",
+        title: "",
     });
 
 
-
-    const selectedContact = contacts.find(
-        (c) => c.id === Number(formData.contactId)
-    );
-
-    const validUserReminders = useMemo(
-        () => userReminders.filter((r) => r && r.id && r.contact_id),
-        [userReminders]
-    );
-
-    const baseItems = useMemo(
-        () => [
-            ...reminders.map((r) => ({ type: "static", ...r })),
-            ...validUserReminders.map((r) => ({ type: "user", ...r })),
-        ],
-        [reminders, validUserReminders]
-    );
-
-    // 🔁 duplicación para carrusel infinito
-    const carouselItems = useMemo(
-        () => (baseItems.length ? [...baseItems, ...baseItems] : []),
-        [baseItems]
-    );
-
+    const infiniteReminders =
+        reminders.length > 0
+            ? [...reminders, ...reminders, ...reminders]
+            : [];
 
 
     useEffect(() => {
-        if (!carouselItems.length) return;
+        if (reminders.length) {
+            setCurrentSlide(reminders.length);
+        }
+    }, [reminders.length]);
+
+
+    useEffect(() => {
+        if (!reminders.length) return;
+
+        clearInterval(intervalRef.current);
 
         intervalRef.current = setInterval(() => {
-            setCurrentSlide((prev) => prev + 1);
+            setCurrentSlide((p) => p + 1);
         }, 3000);
 
         return () => clearInterval(intervalRef.current);
-    }, [carouselItems.length]);
-
+    }, [reminders.length]);
 
 
     useEffect(() => {
-        if (!carouselItems.length) return;
+        if (!reminders.length || !trackRef.current) return;
 
-        const half = carouselItems.length / 2;
-
-        if (currentSlide >= half) {
-            setCurrentSlide(0);
+        if (currentSlide >= reminders.length * 2) {
+            trackRef.current.style.transition = "none";
+            setCurrentSlide(reminders.length);
+            trackRef.current.offsetHeight; // force reflow
+            trackRef.current.style.transition = "";
         }
-    }, [currentSlide, carouselItems.length]);
 
-
+        if (currentSlide <= reminders.length - 1) {
+            trackRef.current.style.transition = "none";
+            setCurrentSlide(reminders.length * 2 - 1);
+            trackRef.current.offsetHeight;
+            trackRef.current.style.transition = "";
+        }
+    }, [currentSlide, reminders.length]);
 
     const stopAuto = () => clearInterval(intervalRef.current);
+
 
     const handleDragStart = (e) => {
         setIsDragging(true);
@@ -104,156 +112,183 @@ const RemindersCarousel = ({
     const handleDragEnd = () => {
         setIsDragging(false);
 
-        if (dragTranslate < -5) {
-            setCurrentSlide((p) => p + 1);
-        } else if (dragTranslate > 5) {
-            setCurrentSlide((p) => Math.max(p - 1, 0));
-        }
+        if (dragTranslate < -5) setCurrentSlide((p) => p + 1);
+        else if (dragTranslate > 5) setCurrentSlide((p) => p - 1);
 
         setDragTranslate(0);
     };
 
 
-
-    const handleChange = (e) =>
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedContact(null);
+        setFormData({ reminder_date: "", title: "" });
+    };
 
     const handleSaveReminder = async () => {
-        if (!formData.contactId || !formData.date || !formData.reason) {
+        if (!selectedContact || !formData.reminder_date || !formData.title) {
             alert("Completa todos los campos");
             return;
         }
 
         await onCreateReminder({
-            contact_id: Number(formData.contactId),
-            title: formData.reason,
-            reminder_date: formData.date,
+            contact_id: selectedContact.id,
+            reminder_date: formData.reminder_date,
+            title: formData.title,
         });
 
-        setShowModal(false);
-        setFormData({ contactId: "", date: "", reason: "" });
+        closeModal();
     };
-
-
 
     return (
         <div id="recordatorios" className="mb-4 pt-3">
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className={`${styles["section-title"]} mb-0`}>
-                    RECORDATORIOS
-                </h5>
-
+                <h5 className={styles["section-title"]}>RECORDATORIOS DESDE COMPONENTE</h5>
                 <button
                     className={`btn ${styles["btn-ideas"]}`}
                     onClick={() => setShowModal(true)}
                 >
-                    + Agregar
+                    + Agregar recordatorio
                 </button>
             </div>
 
-            <div
-                className={styles["reminder-viewport"]}
-                ref={trackRef}
-                onMouseDown={handleDragStart}
-                onMouseMove={handleDragMove}
-                onMouseUp={handleDragEnd}
-                onMouseLeave={handleDragEnd}
-            >
-                <div
-                    className={`${styles["reminder-track"]} ${isDragging ? styles.dragging : ""
-                        }`}
-                    style={{
-                        transform: `translateX(calc(-${currentSlide * 33.33}% + ${dragTranslate}%))`,
-                    }}
-                >
-                    {carouselItems.map((item, i) =>
-                        item.type === "static" ? (
-                            <div key={`static-${i}`} className={styles["reminder-card"]}>
-                                <div className="display-4">{item.icon}</div>
-                                <h6 className="fw-bold">{item.title}</h6>
-                                <small>{item.subtitle}</small>
-                            </div>
-                        ) : (
-                            <div key={`user-${item.id}-${i}`} className={styles["reminder-card"]}>
-                                <h6 className="fw-bold">{item.title}</h6>
-                                <small>📅 {item.reminder_date}</small>
-                                <button
-                                    className="btn btn-sm btn-outline-danger mt-2"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDeleteReminder(item.id);
-                                    }}
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
-                        )
-                    )}
+            {reminders.length === 0 && (
+                <div className="row justify-content-center mb-4">
+                    <div className="col-12 col-md-6 col-lg-4">
+                        <div
+                            className="card h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+                            style={{
+                                border: "2px dashed #ccc",
+                                borderRadius: "20px",
+                                minHeight: "220px",
+                            }}
+                        >
+                            <div className="display-4 mb-3">⏰</div>
+
+                            <h5 className="text-muted mb-2">
+                                Aún no tienes recordatorios
+                            </h5>
+
+                            <p className="text-muted small mb-3">
+                                Crea recordatorios para no olvidar fechas importantes.
+                            </p>
+
+                            <button
+                                className={`btn ${styles["btn-ideas"]}`}
+                                onClick={() => setShowModal(true)}
+                            >
+                                Agregar primer recordatorio
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {reminders.length > 0 && (
+                <>
+
+                    <div
+                        className={styles["reminder-viewport"]}
+                        onMouseDown={handleDragStart}
+                        onMouseMove={handleDragMove}
+                        onMouseUp={handleDragEnd}
+                        onMouseLeave={handleDragEnd}
+                    >
+                        <div
+                            ref={trackRef}
+                            className={styles["reminder-track"]}
+                            style={{
+                                transform: `translateX(-${currentSlide * (100 / infiniteReminders.length)}%)`,
+                            }}
+                        >
+                            {infiniteReminders.map((r, i) => (
+                                <div key={`${r.id}-${i}`} className={styles["reminder-card"]}>
+                                    <div className="display-4">{ICONS[r.title] || "⏰"}</div>
+                                    <h6 className="fw-bold">{r.title}</h6>
+                                    <small>{r.reminder_date}</small>
+
+                                    <button
+                                        className="btn btn-sm btn-outline-danger mt-2"
+                                        onClick={() => onDeleteReminder(r.id)}
+                                    >
+                                        Eliminar
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
 
 
             {showModal && (
                 <div className="modal show d-block" style={{ background: "rgba(0,0,0,.5)" }}>
                     <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5>Nuevo Recordatorio</h5>
-                                <button className="btn-close" onClick={() => setShowModal(false)} />
+                        <div className="modal-content p-4">
+
+                            <h5 className="mb-3">Nuevo Recordatorio</h5>
+
+                            <label className="form-label">Contacto</label>
+                            <div className="d-flex gap-2 mb-3 flex-wrap">
+                                {contacts.map((c) => (
+                                    <div
+                                        key={c.id}
+                                        className={`text-center p-2 border rounded ${selectedContact?.id === c.id ? "border-danger" : ""
+                                            }`}
+                                        style={{ cursor: "pointer", width: 90 }}
+                                        onClick={() => setSelectedContact(c)}
+                                    >
+                                        <img
+                                            src={c.img || "https://i.pravatar.cc/100"}
+                                            alt={c.name}
+                                            style={{
+                                                width: 50,
+                                                height: 50,
+                                                borderRadius: "50%",
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                        <small className="d-block mt-1">{c.name}</small>
+                                    </div>
+                                ))}
                             </div>
 
-                            <div className="modal-body">
-                                <select
-                                    className="form-select mb-3"
-                                    name="contactId"
-                                    value={formData.contactId}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Selecciona un contacto</option>
-                                    {contacts.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <label className="form-label">Fecha</label>
+                            <input
+                                type="date"
+                                className="form-control mb-3"
+                                value={formData.reminder_date}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, reminder_date: e.target.value })
+                                }
+                            />
 
-                                <input
-                                    type="date"
-                                    className="form-control mb-3"
-                                    name="date"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                />
+                            <label className="form-label">Motivo</label>
+                            <select
+                                className="form-select mb-4"
+                                value={formData.title}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, title: e.target.value })
+                                }
+                            >
+                                <option value="">Selecciona un motivo</option>
+                                {REMINDER_REASONS.map((r) => (
+                                    <option key={r} value={r}>
+                                        {r}
+                                    </option>
+                                ))}
+                            </select>
 
-                                <select
-                                    className="form-select"
-                                    name="reason"
-                                    value={formData.reason}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Selecciona un motivo</option>
-                                    {REMINDER_REASONS.map((r) => (
-                                        <option key={r} value={r}>
-                                            {r}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="modal-footer">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowModal(false)}
-                                >
+                            <div className="d-flex justify-content-end gap-2">
+                                <button className="btn btn-secondary" onClick={closeModal}>
                                     Cancelar
                                 </button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleSaveReminder}
-                                >
+                                <button className="btn btn-primary" onClick={handleSaveReminder}>
                                     Guardar
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>
