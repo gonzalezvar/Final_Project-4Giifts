@@ -161,6 +161,7 @@ const Dashboard = () => {
             <nav className="flex-grow-1">
               <a href="#contactos" className={styles["sidebar-link"]}>Contactos</a>
               <div className={styles["sidebar-link"]} onClick={() => navigate('/generar-ideas/user')} style={{ cursor: 'pointer' }}>Generar ideas para mí</div>
+              <div className={styles["sidebar-link"]} onClick={() => navigate('/misfavoritos')} style={{ cursor: 'pointer' }}>Mis Favoritos</div>
               <a href="#recordatorios" className={styles["sidebar-link"]}>Recordatorios</a>
               <div className="mt-4">
                 <label className="text-white mb-2 small">Regalos guardados</label>

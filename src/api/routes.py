@@ -2,7 +2,7 @@ import os
 import json
 import requests
 import google.generativeai as genai
-from flask import Flask, request, jsonify, Blueprint
+from flask import Flask, request, jsonify, Blueprint, current_app
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
@@ -456,16 +456,17 @@ def get_user_own_favorites():
 @jwt_required()
 def generate_share_link():
     user_id = get_jwt_identity()
-    s = URLSafeTimedSerializer(os.getenv("JWT_SECRET_KEY"))
-    token = s.dumps(user_id, salt='share-favorites')
+    s = URLSafeTimedSerializer(current_app.config["JWT_SECRET_KEY"])
+    token = s.dumps(user_id, salt='share-favorites').replace('.', '~')
     link = f"{os.getenv('FRONTEND_URL')}/share/{token}"
     return jsonify({"link": link}), 200
 
 @api.route('/shared/favorites/<token>', methods=['GET'])
 def get_shared_favorites(token):
-    s = URLSafeTimedSerializer(os.getenv("JWT_SECRET_KEY"))
+    s = URLSafeTimedSerializer(current_app.config["JWT_SECRET_KEY"])
     try:
-        user_id = int(s.loads(token, salt='share-favorites', max_age=432000))
+        real_token = token.replace('~', '.')
+        user_id = int(s.loads(real_token, salt='share-favorites', max_age=432000))
     except:
         return jsonify({"msg": "Enlace inválido o expirado"}), 400
     
