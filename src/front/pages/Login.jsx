@@ -1,6 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
 import { checkLogin } from "../services";
+import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 export const Login = () => {
   const { dispatch } = useGlobalReducer();
@@ -18,19 +21,26 @@ export const Login = () => {
       const resp = await checkLogin(user);
       const data = await resp.json();
 
-      if (!resp.ok) {
-        alert(data.message);
-        return;
+      if (resp.ok) {
+        sessionStorage.setItem("token", data.token);
+
+        if (data.user) {
+            dispatch({ type: "setUser", payload: data.user });
+        }
+        
+        window.dispatchEvent(new Event("auth-change")); // añado esto para que funcione la parte del navbar.
+        
+        navigate("/dashboard");
+      } else {
+        alert("Error en el login: " + (data.message || "Credenciales incorrectas"));
       }
-
-      sessionStorage.setItem("token", data.token);
-      dispatch({ type: "setUser", payload: data.user });
-
-      navigate("/dashboard");
     } catch (err) {
+      console.error(err);
       alert("Error de conexión");
     }
   };
+
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center"
@@ -39,7 +49,7 @@ export const Login = () => {
         <div className="card-body p-4">
 
           <div className="text-center mb-3">
-            <img src="/Logo4giift.jpeg" width="90" />
+            <img src="/Logo4giift.jpeg" width="90" alt="Logo" />
             <h5 className="mt-2" style={{ color: "#DC143C" }}>Nunca olvides un regalo importante</h5>
           </div>
 
@@ -62,14 +72,25 @@ export const Login = () => {
               <label htmlFor="passw_login" className="form-label fw-semibold" style={{ color: "#DC143C" }}>
                 Contraseña
               </label>
-              <input
-                type="password"
-                id="passw_login"
-                name="password"
-                className="form-control"
-                placeholder="••••••••"
-                required
-              />
+
+              <div className="input-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="passw_login"
+                  name="password"
+                  className="form-control"
+                  placeholder="••••••••"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                </button>
+              </div>
             </div>
 
             <div className="d-grid">

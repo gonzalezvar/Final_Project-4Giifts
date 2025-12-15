@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from "./dashboard.module.css";
 import { getPrivateData, getUserContacts, createContact, updateContact, getContactFavorites, deleteFavorite } from '../services';
+import RemindersCarousel from "../components/RemindersCarousel";
+import {
+  getReminders,
+  createReminder,
+  deleteReminder,
+} from "../services";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,12 +25,55 @@ const Dashboard = () => {
 
   const [formData, setFormData] = useState(initialFormState);
   const [editingContactId, setEditingContactId] = useState(null);
-  
-  const [reminders] = useState([
-    { id: 1, title: 'Cumpleaños', subtitle: '(Pronto)', icon: '🎂' },
-    { id: 2, title: 'Navidad', subtitle: '(Se acerca)', icon: '🎄' },
-    { id: 3, title: 'San Valentín', subtitle: '(Próximo)', icon: '❤️' },
-  ]);
+
+  const [reminders, setReminders] = useState([]);
+
+
+
+
+
+  const loadReminders = async () => {
+    try {
+      const res = await getReminders();
+      if (res.ok) {
+        const data = await res.json();
+        setReminders(data);
+      }
+    } catch (err) {
+      console.error("Error cargando recordatorios", err);
+    }
+  };
+
+  useEffect(() => {
+    loadReminders();
+  }, []);
+
+
+  const handleCreateReminder = async (data) => {
+    try {
+      const res = await createReminder(data);
+      if (!res.ok) return;
+
+
+      await loadReminders();
+    } catch (err) {
+      console.error("Error creando recordatorio", err);
+    }
+  };
+
+
+  const handleDeleteReminder = async (id) => {
+    try {
+      await deleteReminder(id);
+
+
+      await loadReminders();
+    } catch (err) {
+      console.error("Error eliminando recordatorio", err);
+    }
+  };
+
+
 
   const [selectedContactId, setSelectedContactId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +81,7 @@ const Dashboard = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [dragTranslate, setDragTranslate] = useState(0);
+
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,11 +105,7 @@ const Dashboard = () => {
     loadData();
   }, [navigate]);
 
-  useEffect(() => {
-    const start = () => { intervalRef.current = setInterval(() => setCurrentSlide(p => (p + 1) % reminders.length), 3000); };
-    start();
-    return () => clearInterval(intervalRef.current);
-  }, [reminders.length]);
+ 
 
   const stopAuto = () => clearInterval(intervalRef.current);
   const handleDragStart = (e) => { setIsDragging(true); setStartX(e.clientX || e.touches[0].clientX); stopAuto(); };
@@ -79,22 +125,22 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (activeContact) {
-        getContactFavorites(activeContact.id).then(res => {
-            if(res.ok) return res.json();
-            return [];
-        }).then(data => setActiveFavorites(data));
-        
-        if(giftsSectionRef.current) {
-            setTimeout(() => giftsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        }
+      getContactFavorites(activeContact.id).then(res => {
+        if (res.ok) return res.json();
+        return [];
+      }).then(data => setActiveFavorites(data));
+
+      if (giftsSectionRef.current) {
+        setTimeout(() => giftsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      }
     }
   }, [activeContact, selectedContactId]);
 
   const handleDeleteFav = async (favId) => {
-      const res = await deleteFavorite(favId);
-      if(res.ok) {
-          setActiveFavorites(activeFavorites.filter(f => f.favorite_id !== favId));
-      }
+    const res = await deleteFavorite(favId);
+    if (res.ok) {
+      setActiveFavorites(activeFavorites.filter(f => f.favorite_id !== favId));
+    }
   };
 
   const normalize = (t) => t ? t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
@@ -120,7 +166,7 @@ const Dashboard = () => {
     setContactToDelete(null);
   };
 
-  const handleLogout = () => { sessionStorage.removeItem("token"); navigate("/"); };
+  const handleLogout = () => { sessionStorage.removeItem("token"); navigate("/"); window.dispatchEvent(new Event("auth-change")); };
   const handleInputChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
   const resetModal = () => { setShowAddModal(false); setFormData(initialFormState); setEditingContactId(null); };
 
@@ -161,16 +207,30 @@ const Dashboard = () => {
             <nav className="flex-grow-1">
               <a href="#contactos" className={styles["sidebar-link"]}>Contactos</a>
               <div className={styles["sidebar-link"]} onClick={() => navigate('/generar-ideas/user')} style={{ cursor: 'pointer' }}>Generar ideas para mí</div>
+              <div className={styles["sidebar-link"]} onClick={() => navigate('/misfavoritos')} style={{ cursor: 'pointer' }}>Mis Favoritos</div>
               <a href="#recordatorios" className={styles["sidebar-link"]}>Recordatorios</a>
               <div className="mt-4">
-                <label className="text-white mb-2 small">Regalos guardados</label>
+                <label className={styles["sidebar-link"]}>Regalos guardados</label>
                 <select className={`form-select ${styles["custom-select"]}`} value={selectedContactId} onChange={(e) => setSelectedContactId(e.target.value)}>
                   <option value="">Selecciona contacto...</option>
                   {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <button className={`btn ${styles["btn-ideas"]} mt-3 mx-auto`} onClick={() => navigate("/profile/edit")}>Editar Perfil</button>
-              <button className={`btn ${styles["btn-ideas"]} mt-5 mx-auto`} onClick={handleLogout}>Cerrar Sesión</button>
+              <div className="mt-5 d-flex justify-content-center gap-3">
+                <button
+                  className={`btn ${styles["btn-ideas"]}`}
+                  onClick={() => navigate("/profile/edit")}
+                >
+                  Editar Perfil
+                </button>
+
+                <button
+                  className={`btn ${styles["btn-ideas"]}`}
+                  onClick={handleLogout}
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
             </nav>
           </div>
         </aside>
@@ -182,7 +242,7 @@ const Dashboard = () => {
               <button className={styles["btn-add-contact"]} onClick={() => setShowAddModal(true)}>+</button>
             </div>
             <div className={styles["search-input-container"]}>
-              <input className={`form-control form-control-plaintext ${styles["search-input"]}`} placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <input className={`form-control form-control-plaintext ${styles["search-input"]}`} placeholder="Buscar contactos..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
           </div>
 
@@ -194,7 +254,12 @@ const Dashboard = () => {
                     <button className={styles["btn-edit-contact"]} onClick={(e) => handleEditClick(e, c)}>✎</button>
                     <button className={styles["btn-delete-contact"]} onClick={(e) => { e.stopPropagation(); setContactToDelete(c); setShowDeleteModal(true); }}>X</button>
                     <div className="card-body d-flex flex-column align-items-center">
-                      <img src={c.img || "https://i.pravatar.cc/150"} className={`${styles["contact-img"]} mb-3`} onError={(e) => e.target.src = "https://i.pravatar.cc/150"} alt={c.name} />
+                      <img
+                        src={c.img || `https://api.dicebear.com/9.x/avataaars/svg?seed=${c.name}`}
+                        className={`${styles["contact-img"]} mb-3`}
+                        onError={(e) => e.target.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${c.name}`}
+                        alt={c.name}
+                      />
                       <h5 className="fw-bold">{c.name}</h5>
                       <small className="text-muted mb-2">{c.relation}</small>
                       <button className={`btn ${styles["btn-ideas"]} mt-auto`} onClick={(e) => { e.stopPropagation(); navigate(`/generar-ideas/${c.id}`); }}>Generar ideas</button>
@@ -213,18 +278,12 @@ const Dashboard = () => {
           </div>
 
           <div id="recordatorios" className="mb-2 pt-3">
-            <h5 className={`${styles["section-title"]} text-center mb-4`}>RECORDATORIOS</h5>
-            <div className={styles["reminder-viewport"]} ref={trackRef} onMouseDown={handleDragStart} onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
-              <div className={`${styles["reminder-track"]} ${isDragging ? styles.dragging : ''}`} style={{ transform: `translateX(calc(-${currentSlide * 33.33}% + ${dragTranslate}%))` }}>
-                {reminders.concat(reminders).map((r, i) => (
-                  <div key={`${r.id}-${i}`} className={styles["reminder-card"]}>
-                    <div className="display-4">{r.icon}</div>
-                    <h6 className="fw-bold">{r.title}</h6>
-                    <small>{r.subtitle}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <RemindersCarousel
+              reminders={reminders}
+              contacts={contacts}
+              onCreateReminder={handleCreateReminder}
+              onDeleteReminder={handleDeleteReminder}
+            />
           </div>
 
           {activeContact && (
@@ -232,38 +291,46 @@ const Dashboard = () => {
               <button className={styles["btn-close-gifts"]} onClick={() => setSelectedContactId('')}>X</button>
               <div className={styles["saved-gifts-inner"]}>
                 <div className="row mb-4 align-items-center">
-                  <div className="col-auto"><img src={activeContact.img || "https://i.pravatar.cc/150"} className={styles["contact-img"]} style={{ width: 60, height: 60 }} onError={(e) => e.target.src = "https://i.pravatar.cc/150"} alt="" /></div>
+                  <div className="col-auto">
+                    <img
+                      src={activeContact.img || `https://api.dicebear.com/9.x/avataaars/svg?seed=${activeContact.name}`}
+                      className={styles["contact-img"]}
+                      style={{ width: 60, height: 60 }}
+                      onError={(e) => e.target.src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${activeContact.name}`}
+                      alt=""
+                    />
+                  </div>
                   <div className="col">
                     <h4 className="fw-bold text-dark">Favoritos de {activeContact.name}</h4>
                     <small className="text-muted d-block mb-2">Relación: {activeContact.relation}</small>
                   </div>
                 </div>
-                
+
                 {activeFavorites.length > 0 ? (
-                    <div className="row g-3">
+                  <div className="row g-3">
                     {activeFavorites.map(g => (
-                        <div key={g.favorite_id} className="col-12 col-sm-6 col-lg-3">
+                      <div key={g.favorite_id} className="col-12 col-sm-6 col-lg-3">
                         <div className={`${styles["gift-item-card"]} h-100 d-flex flex-column`}>
-                            <button className={styles["btn-delete-gift"]} onClick={() => handleDeleteFav(g.favorite_id)}>X</button>
-                            <img src={g.img} className={styles["gift-img"]} alt="" onError={(e)=>e.target.src="https://via.placeholder.com/300"}/>
-                            <div className="p-3 flex-grow-1 d-flex flex-column">
+                          <button className={styles["btn-delete-gift"]} onClick={() => handleDeleteFav(g.favorite_id)}>X</button>
+                          <img src={g.img} className={styles["gift-img"]} alt="" onError={(e) => e.target.src = "https://via.placeholder.com/300"} />
+                          <div className="p-3 flex-grow-1 d-flex flex-column">
                             <h6 className="small fw-bold">{g.name}</h6>
                             <p className="small mb-2 fw-bold text-muted">{g.price}</p>
                             <a href={g.link} target="_blank" rel="noreferrer" className={`btn ${styles["btn-buy"]} mt-auto`}>Comprar</a>
-                            </div>
+                          </div>
                         </div>
-                        </div>
+                      </div>
                     ))}
-                    </div>
+                  </div>
                 ) : (
-                    <div className="text-center py-5">
-                        <h5 className="text-muted mb-3">No hay favoritos guardados para {activeContact.name}</h5>
-                        <button className={`btn ${styles["btn-ideas"]}`} onClick={() => navigate(`/generar-ideas/${activeContact.id}`)}>
-                            Generar ideas para regalarle a {activeContact.name}
-                        </button>
-                    </div>
+                  <div className="text-center py-5">
+                    <h5 className="text-muted mb-3">No hay favoritos guardados para {activeContact.name}</h5>
+                    <button className={`btn ${styles["btn-ideas"]}`} onClick={() => navigate(`/generar-ideas/${activeContact.id}`)}>
+                      Generar ideas para regalarle a {activeContact.name}
+                    </button>
+                  </div>
                 )}
-                
+
               </div>
             </div>
           )}
@@ -280,17 +347,17 @@ const Dashboard = () => {
               </div>
               <div className="modal-body">
                 <form>
-                  <div className="mb-3"><label className="form-label">Nombre Completo</label><input type="text" className="form-control" name="name" placeholder="Nombre y Apellidos" value={formData.name} onChange={handleInputChange} /></div>
+                  <div className="mb-3"><label className="form-label">Nombre*</label><input type="text" className="form-control" name="name" placeholder="Nombre" value={formData.name} required onChange={handleInputChange} /></div>
                   <div className="row">
                     <div className="col-6 mb-3"><label className="form-label">Parentesco</label><input type="text" className="form-control" name="relation" placeholder="Ej: Amiga, Padre, Primo..." value={formData.relation} onChange={handleInputChange} /></div>
                     <div className="col-6 mb-3"><label className="form-label">Fecha Nacimiento</label><input type="date" className="form-control" name="birth_date" value={formData.birth_date} onChange={handleInputChange} /></div>
                   </div>
                   <div className="row">
                     <div className="col-6 mb-3">
-                        <label className="form-label">Género</label>
-                        <select className="form-select" name="gender" value={formData.gender} onChange={handleInputChange}>
-                            <option value="">Masculino/Femenino/Otro</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option>
-                        </select>
+                      <label className="form-label">Género</label>
+                      <select className="form-select" name="gender" value={formData.gender} onChange={handleInputChange}>
+                        <option value="">Masculino/Femenino/Otro</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option>
+                      </select>
                     </div>
                     <div className="col-6 mb-3"><label className="form-label">Ocupación</label><input type="text" className="form-control" name="ocupacion" placeholder="Ej: Arquitecto, Estudiante..." value={formData.ocupacion} onChange={handleInputChange} /></div>
                   </div>

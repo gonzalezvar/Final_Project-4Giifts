@@ -123,3 +123,68 @@ export const deleteFavorite = async (favId) => {
     });
     return response;
 };
+
+
+export const getUserFavorites = async () => {
+    const token = sessionStorage.getItem("token");
+    const response = await fetch(`${base_url}/api/user/favorites`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }
+    });
+    return response;
+};
+
+export const generateShareLink = async () => {
+    const token = sessionStorage.getItem("token");
+    const response = await fetch(`${base_url}/api/user/share_link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }
+    });
+    return response;
+};
+
+export const getSharedFavorites = async (token) => {
+    const response = await fetch(`${base_url}/api/shared/favorites/${token}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+    });
+    return response;
+};
+
+
+const authHeaders = () => {
+  const token = sessionStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
+export const getReminders = async () => {
+  return fetch(`${base_url}/api/reminders`, {
+    headers: authHeaders(),
+  });
+};
+
+export const createReminder = async (data) => {
+  return fetch(`${base_url}/api/reminders`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteReminder = async (id) => {
+  const res = await fetch(`${base_url}/api/reminders/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Error eliminando reminder");
+  }
+
+  return res;
+};
+ /* a ver si con este comentario solucionamos el problema */

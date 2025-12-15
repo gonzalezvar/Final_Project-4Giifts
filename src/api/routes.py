@@ -2,14 +2,15 @@ import os
 import json
 import requests
 import google.generativeai as genai
-from flask import Flask, request, jsonify, Blueprint
+from flask import Flask, request, jsonify, Blueprint, current_app
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone, timedelta
-from api.models import db, User, Contactos, Producto, Historial, Favorite, bcrypt
+from api.models import db, User, Contactos, Producto, Historial, Favorite, bcrypt, Reminder
 from flask_mail import Message
 from api.extensions import mail
+from itsdangerous import URLSafeTimedSerializer
 
 api = Blueprint('api', __name__)
 CORS(api)
@@ -432,3 +433,122 @@ def reset_password():
     user.password = bcrypt.generate_password_hash(new_password).decode("utf-8")
     db.session.commit()
     return jsonify({"msg": "Contraseña actualizada con éxito"}), 200
+
+@api.route('/user/favorites', methods=['GET'])
+@jwt_required()
+def get_user_own_favorites():
+    current_user_id = int(get_jwt_identity())
+    favs = db.session.execute(db.select(Favorite).where(Favorite.user_id == current_user_id, Favorite.contact_id == None)).scalars().all()
+    result = []
+    for f in favs:
+        p = f.producto
+        result.append({
+            "favorite_id": f.favorite_id,
+            "product_id": p.id,
+            "name": p.nombre,
+            "img": p.img_url,
+            "price": p.precio,
+            "link": p.link_compra
+        })
+    return jsonify(result), 200
+#Vista dinamica - extre favoritos reales de los usarios# 
+
+@api.route('/get_favorite_user', methods=['GET'])
+def handle_get_favorite_user():
+    favs = db.session.execute(db.select(Favorite)).scalars().all()
+    result = []
+    for f in favs:
+        p = f.producto
+        result.append({
+            "favorite_id": f.favorite_id,
+            "product_id": p.id,
+            "name": p.nombre,
+            "img": p.img_url,
+            "price": p.precio,
+            "link": p.link_compra
+        })
+    return jsonify(result), 200
+
+@api.route('/user/share_link', methods=['POST'])
+@jwt_required()
+def generate_share_link():
+    user_id = get_jwt_identity()
+    s = URLSafeTimedSerializer(current_app.config["JWT_SECRET_KEY"])
+    token = s.dumps(user_id, salt='share-favorites').replace('.', '~')
+    link = f"{os.getenv('FRONTEND_URL')}/share/{token}"
+    return jsonify({"link": link}), 200
+
+@api.route('/shared/favorites/<token>', methods=['GET'])
+def get_shared_favorites(token):
+    s = URLSafeTimedSerializer(current_app.config["JWT_SECRET_KEY"])
+    try:
+        real_token = token.replace('~', '.')
+        user_id = int(s.loads(real_token, salt='share-favorites', max_age=432000))
+    except:
+        return jsonify({"msg": "Enlace inválido o expirado"}), 400
+    
+    user = db.session.get(User, user_id)
+    if not user: return jsonify({"msg": "Usuario no encontrado"}), 404
+
+    favs = db.session.execute(db.select(Favorite).where(Favorite.user_id == user_id, Favorite.contact_id == None)).scalars().all()
+    
+    products = []
+    for f in favs:
+        p = f.producto
+        products.append({
+            "name": p.nombre,
+            "img": p.img_url,
+            "price": p.precio,
+            "link": p.link_compra,
+            "description": p.descripcion
+        })
+    
+    return jsonify({
+        "user_name": f"{user.first_name}",
+        "user_img": user.profile_pic,
+        "products": products
+    }), 200
+
+
+
+
+
+@api.route('/reminders', methods=['GET'])
+@jwt_required()
+def get_reminders():
+    user_id = int(get_jwt_identity())
+    reminders = db.session.execute(
+        db.select(Reminder).where(Reminder.user_id == user_id)
+    ).scalars().all()
+    return jsonify([r.to_dict() for r in reminders]), 200
+
+
+@api.route('/reminders', methods=['POST'])
+@jwt_required()
+def create_reminder():
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    reminder = Reminder(
+        user_id=user_id,
+        contact_id=data.get("contact_id"),
+        title=data.get("title"),
+        reminder_date=data.get("reminder_date")
+    )
+    db.session.add(reminder)
+    db.session.commit()
+    return jsonify(reminder.to_dict()), 201
+
+
+
+@api.route('/reminders/<int:reminder_id>', methods=['DELETE'])
+@jwt_required()
+def delete_reminder(reminder_id):
+    user_id = int(get_jwt_identity())
+    reminder = db.session.get(Reminder, reminder_id)
+    if not reminder or reminder.user_id != user_id:
+        return jsonify({"msg": "No encontrado"}), 404
+    db.session.delete(reminder)
+    db.session.commit()
+    return jsonify({"msg": "Recordatorio eliminado"}), 200
+ # a ver si con este comentario solucionamos el problema 
