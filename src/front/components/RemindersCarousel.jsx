@@ -25,6 +25,7 @@ const ICONS = {
     Boda: "💒",
     Nacimiento: "👶",
     Otro: "⏰",
+    Alerta: "⚠️",
 };
 
 const SLIDES_PER_VIEW = 3;
@@ -160,6 +161,10 @@ const RemindersCarousel = ({
 
         closeModal();
     };
+    const europeDate = (dateString) => {
+        const [year, month, day] = dateString.split("-");
+        return `${day}/${month}/${year}`;
+    }
 
     return (
         <div id="recordatorios" className="mb-4 pt-3">
@@ -221,6 +226,7 @@ const RemindersCarousel = ({
                             const contact = contacts.find(
                                 (c) => c.id === r.contact_id
                             );
+                            
 
                             return (
                                 <div
@@ -246,12 +252,14 @@ const RemindersCarousel = ({
                                             </div>
                                         )}
 
+                                        <h6 className="fw-bold">{r.title}</h6>
+                                        <small>{europeDate(r.reminder_date)}</small>
                                         <div className="display-4">
                                             {ICONS[r.title] || "⏰"}
                                         </div>
 
-                                        <h6 className="fw-bold">{r.title}</h6>
-                                        <small>{r.reminder_date}</small>
+
+                                        <h4 className={styles["days-lefts"]}>{r.daysLeft <= 15 ? ICONS["Alerta"] || "⚠️" : ""} {r.daysLeft} {r.daysLeft <= 15 ? ICONS["Alerta"] || "⚠️" : ""} días restantes</h4>
 
                                         <button
                                             className="btn btn-sm btn-outline-danger mt-2"

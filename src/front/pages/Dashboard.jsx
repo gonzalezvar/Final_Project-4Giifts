@@ -8,6 +8,7 @@ import {
   createReminder,
   deleteReminder,
 } from "../services";
+import { faCommentsDollar } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,7 +38,14 @@ const Dashboard = () => {
       const res = await getReminders();
       if (res.ok) {
         const data = await res.json();
-        const sortedReminders = data.sort((a, b) => {
+        const dataWithReminder = data.map(reminder => {
+          const msPerDay = 24 * 60 * 60 * 1000;
+          const reminderDate = new Date(reminder.reminder_date);
+          const today = new Date();
+          const daysLeft = Math.ceil((reminderDate - today) / msPerDay);
+          return { daysLeft, ...reminder };
+        })
+        const sortedReminders = dataWithReminder.sort((a, b) => {
           const dateA = new Date(a.reminder_date);
           const dateB = new Date(b.reminder_date);
 

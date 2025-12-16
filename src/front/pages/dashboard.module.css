@@ -410,3 +410,12 @@ body {
 .btn-edit-contact:hover {
   background-color: #495057;
 }
+/* --- DAY-LEFTS --- */
+.days-lefts {
+  color: white;
+  margin-top: 0.5rem;
+  border: 2px solid var(--color-crimson);
+  padding: 5px 10px;
+  border-radius: 10px;
+  background-color: var(--color-rose);
+}
