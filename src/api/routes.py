@@ -164,6 +164,23 @@ def create_contact():
     )
     try:
         db.session.add(new_contact)
+        db.session.flush()
+        if data.get("birth_date"):
+            try:
+                birth_date_str = data.get("birth_date")
+                birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
+
+                birthday_reminder = Reminder(
+                    user_id=current_user_id,
+                    contact_id=new_contact.contactos_id,
+                    title="Cumpleaños",
+                    reminder_date=birth_date_str,
+                    notify_days_before=7  # opcional
+                )
+                db.session.add(birthday_reminder)
+            except Exception as e:
+                print(f"⚠️ Error creando reminder automático: {e}")
+
         db.session.commit()
         return jsonify({
             "id": new_contact.contactos_id,
