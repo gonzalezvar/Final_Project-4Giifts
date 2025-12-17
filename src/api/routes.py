@@ -164,6 +164,23 @@ def create_contact():
     )
     try:
         db.session.add(new_contact)
+        db.session.flush()
+        if data.get("birth_date"):
+            try:
+                birth_date_str = data.get("birth_date")
+                birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
+
+                birthday_reminder = Reminder(
+                    user_id=current_user_id,
+                    contact_id=new_contact.contactos_id,
+                    title="Cumpleaños",
+                    reminder_date=birth_date_str,
+                    notify_days_before=7  # opcional
+                )
+                db.session.add(birthday_reminder)
+            except Exception as e:
+                print(f"⚠️ Error creando reminder automático: {e}")
+
         db.session.commit()
         return jsonify({
             "id": new_contact.contactos_id,
@@ -417,9 +434,30 @@ def request_recover():
     if not user: return jsonify(msg_ok), 200
     token = create_access_token(identity=str(user.user_id), expires_delta=timedelta(minutes=15))
     reset_link = f"{os.getenv('FRONTEND_URL')}/reset-password?token={token}"
-    msg = Message(subject="Recuperación de contraseña", recipients=[email])
-    msg.body = f"Hola, has solicitado restablecer tu contraseña.\nHaz clic en el siguiente enlace: {reset_link}\nExpira en 15 min."
+    msg = Message(subject="Recuperación de contraseña 4Giifts", recipients=[email])
+    msg.body = f"Hola {user.first_name}:\nHemos recibido una solicitud para restablecer la contraseña de tu cuenta en <b>4Giifts</b>. \nEntendemos que con tantas fechas y regalos en la cabeza, una contraseña se puede olvidar.\n \nPara crear una nueva, simplemente haz clic en el siguiente botón: {reset_link}\nExpira en 15 min."
+    msg.html = f"""
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <p>Hola {user.first_name}:</p>
+        <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <b>4Giifts</b>.</p>
+        <p>Entendemos que con tantas fechas y regalos en la cabeza, una contraseña se puede olvidar.</p>
+        <p>Para crear una nueva, simplemente haz clic en el siguiente botón:</p>
+        
+        <p style="text-align: center;">
+            <a href="{reset_link}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: sans-serif;">
+                Restablecer Contraseña
+            </a>
+        </p>
+        
+        <p><small>Este enlace expira en 15 minutos.</small></p>
+        <p><small>Si el botón no funciona, copia este enlace: {reset_link}</small></p>
+    </body>
+    </html>
+    """
     mail.send(msg)
+
     return jsonify(msg_ok), 200
 
 @api.route("/recover/reset", methods=["POST"])
