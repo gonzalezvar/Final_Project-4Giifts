@@ -24,7 +24,7 @@ export const Instrucciones = () => {
                     />
 
                     <div className="instruction-content">
-                        <h5 className="fw-bold mb-2">
+                        <h5 className="fw-bold mb-2 text-dark">
                             1. Regístrate
                         </h5>
 
@@ -48,7 +48,7 @@ export const Instrucciones = () => {
                     />
 
                     <div className="instruction-content">
-                        <h5 className="fw-bold mb-2">
+                        <h5 className="fw-bold mb-2 text-dark">
                             2. Loguéate
                         </h5>
 
@@ -65,13 +65,13 @@ export const Instrucciones = () => {
                     style={{ width: "18rem", height: "260px" }}
                 >
                     <img
-                        src="public/dashboard.png"
+                        src="public/generar ideas.png"
                         alt="Dashboard"
-                        className="instruction-img"
+                        className="instruction-img instruction-img-top-left"
                     />
 
                     <div className="instruction-content">
-                        <h5 className="fw-bold mb-2">
+                        <h5 className="fw-bold mb-2 text-dark">
                             3. Genera tus regalos
                         </h5>
 

@@ -167,3 +167,7 @@
 .instruction-card:hover {
     border: none; 
 }
+
+.instruction-img-top-left {
+    object-position: top left;
+}
