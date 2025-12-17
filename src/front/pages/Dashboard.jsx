@@ -32,7 +32,7 @@ const Dashboard = () => {
 
 
 
-
+{/*HUGO: automatizar reminders*/}
   const loadReminders = async () => {
     try {
       const res = await getReminders();
@@ -42,8 +42,17 @@ const Dashboard = () => {
           const msPerDay = 24 * 60 * 60 * 1000;
           const reminderDate = new Date(reminder.reminder_date);
           const today = new Date();
-          const daysLeft = Math.ceil((reminderDate - today) / msPerDay);
-          return { daysLeft, ...reminder };
+
+          let nextDate = new Date(
+            today.getFullYear(), 
+            reminderDate.getMonth(),
+            reminderDate.getDate()
+          );
+          if (nextDate < today) {
+            nextDate.setFullYear(today.getFullYear() + 1);
+          }
+          const daysLeft = Math.ceil((nextDate - today) / msPerDay);
+          return { daysLeft, nextDate, ...reminder };
         })
         const sortedReminders = dataWithReminder.sort((a, b) => {
           const dateA = new Date(a.reminder_date);
@@ -175,6 +184,12 @@ const Dashboard = () => {
           setContacts(contacts.filter(c => c.id !== contactToDelete.id));
           if (selectedContactId === contactToDelete.id.toString()) setSelectedContactId('');
         }
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/favorito/contact/${contactToDelete.id}`, 
+          {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          await loadReminders();
       } catch (e) { console.error(e); }
     }
     setShowDeleteModal(false);
@@ -205,10 +220,15 @@ const Dashboard = () => {
 
       if (res.ok) {
         const savedContact = await res.json();
-        if (editingContactId) setContacts(contacts.map(c => c.id === editingContactId ? savedContact : c));
+        if (editingContactId) 
+          setContacts(contacts.map(c => c.id === editingContactId ? savedContact : c));
         else setContacts([...contacts, savedContact]);
+        setContacts([...contacts, savedContact]);
+        await loadReminders();
+        
         resetModal();
-      } else alert("Error al guardar contacto");
+      } else 
+        alert("Error al guardar contacto");
     } catch (error) { console.error("Error:", error); }
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import styles from "../pages/dashboard.module.css";
 
 const REMINDER_REASONS = [
@@ -52,68 +52,100 @@ const RemindersCarousel = ({
         title: "",
     });
 
-    const canLoop = reminders.length >= SLIDES_PER_VIEW;
+    const sortedReminders = useMemo(() => {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        return [...reminders].map(r => {
+            let eventDate = new Date(r.reminder_date);
+
+            // Si es cumpleaños o nacimiento, forzamos que sea la PRÓXIMA fecha
+            if (r.title === "Cumpleaños" || r.title === "Nacimiento" || r.title === "Aniversario") {
+                eventDate.setFullYear(hoy.getFullYear());
+                if (eventDate < hoy) {
+                    eventDate.setFullYear(hoy.getFullYear() + 1);
+                }
+            }
+
+            // Calculamos días restantes exactos
+            const diffTime = eventDate.getTime() - hoy.getTime();
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            return { ...r, calculatedDate: eventDate, daysLeft: daysLeft };
+        }).sort((a, b) => a.daysLeft - b.daysLeft); // Ordenamos: el que falte menos días primero
+    }, [reminders]);
+    const len = sortedReminders.length;
+    const canLoop = len >= SLIDES_PER_VIEW;
 
     const infiniteReminders = canLoop
-        ? [...reminders, ...reminders, ...reminders]
-        : reminders;
+        ? [...sortedReminders, ...sortedReminders, ...sortedReminders]
+        : sortedReminders;
+
 
     useEffect(() => {
-        if (!reminders.length) return;
-        setCurrentSlide(canLoop ? reminders.length : 0);
-    }, [reminders.length, canLoop]);
+        if (len > 0 && canLoop) {
 
-    const startAuto = () => {
-        clearInterval(intervalRef.current);
+            if (trackRef.current) {
+                trackRef.current.style.transition = "none";
+                setCurrentSlide(len);
+                requestAnimationFrame(() => {
+                    if (trackRef.current) {
+                        trackRef.current.style.transition = "transform 0.4s ease";
+                    }
+                });
+            }
+        }
+    }, [len, canLoop]);
 
+    function startAuto() {
+        stopAuto();
         intervalRef.current = setInterval(() => {
             if (isLoopingRef.current) return;
             setCurrentSlide((p) => p + 1);
         }, AUTOPLAY_DELAY);
-    };
+    }
 
 
-    const stopAuto = () => clearInterval(intervalRef.current);
+    const stopAuto = () => { clearInterval(intervalRef.current); };
 
     useEffect(() => {
-        if (!canLoop) return;
-        startAuto();
-        return () => clearInterval(intervalRef.current);
-    }, [canLoop]);
+        if (canLoop) startAuto();
+        return () => stopAuto();
+    }, [canLoop, len]);
 
     useEffect(() => {
         if (!canLoop || !trackRef.current) return;
 
         const track = trackRef.current;
 
-        if (currentSlide >= reminders.length * 2) {
-            isLoopingRef.current = true;            // ✅ AÑADIR
+        if (currentSlide >= len * 2) {
+            isLoopingRef.current = true;
             track.style.transition = "none";
-
+            setCurrentSlide(len);
             requestAnimationFrame(() => {
-                setCurrentSlide(reminders.length);
-
+                track.style.transform = `translateX(-${len * (100 / SLIDES_PER_VIEW)}%)`;
                 requestAnimationFrame(() => {
                     track.style.transition = "transform 0.4s ease";
-                    isLoopingRef.current = false;   // ✅ AÑADIR
+                    isLoopingRef.current = false;
                 });
             });
         }
 
-        if (currentSlide <= reminders.length - 1) {
-            isLoopingRef.current = true;            // ✅ AÑADIR
+        if (currentSlide < len) {
+            isLoopingRef.current = true;
             track.style.transition = "none";
-
+            const target = len * 2 - 1;
+            setCurrentSlide(target);
             requestAnimationFrame(() => {
-                setCurrentSlide(reminders.length * 2 - 1);
-
+                track.style.transform = `translateX(-${(len * 2 - 1) * (100 / SLIDES_PER_VIEW)}%)`;
                 requestAnimationFrame(() => {
-                    track.style.transition = "transform 0.4s ease";
-                    isLoopingRef.current = false;   // ✅ AÑADIR
+                    requestAnimationFrame(() => {
+                        track.style.transition = "transform 0.4s ease";
+                        isLoopingRef.current = false;
+                    });
                 });
             });
         }
-    }, [currentSlide, reminders.length, canLoop]);
+    }, [currentSlide, len, canLoop]);
 
 
     const handleDragStart = (e) => {
@@ -130,13 +162,8 @@ const RemindersCarousel = ({
 
         const endX = e.clientX || e.changedTouches?.[0]?.clientX;
         const diff = endX - startX;
-
-        if (diff < -DRAG_THRESHOLD) {
-            setCurrentSlide((p) => p + 1);
-        } else if (diff > DRAG_THRESHOLD) {
-            setCurrentSlide((p) => p - 1);
-        }
-
+        if (diff < -DRAG_THRESHOLD) setCurrentSlide((p) => p + 1);
+        else if (diff > DRAG_THRESHOLD) setCurrentSlide((p) => p - 1);
         setIsDragging(false);
         startAuto();
     };
@@ -220,13 +247,15 @@ const RemindersCarousel = ({
                         className={styles["reminder-track"]}
                         style={{
                             transform: `translateX(-${currentSlide * (100 / SLIDES_PER_VIEW)}%)`,
+                            transition: "transform 0.4s ease",
+                            display: "flex",
                         }}
                     >
                         {infiniteReminders.map((r, i) => {
                             const contact = contacts.find(
                                 (c) => c.id === r.contact_id
                             );
-                            
+
 
                             return (
                                 <div
@@ -253,14 +282,17 @@ const RemindersCarousel = ({
                                         )}
 
                                         <h6 className="fw-bold">{r.title}</h6>
-                                        <small>{europeDate(r.reminder_date)}</small>
+                                        <small>{europeDate(r.calculatedDate.toISOString().split('T')[0])}</small>
                                         <div className="display-4">
                                             {ICONS[r.title] || "⏰"}
                                         </div>
 
 
-                                        <h4 className={styles["days-lefts"]}>{r.daysLeft <= 15 ? ICONS["Alerta"] || "⚠️" : ""} {r.daysLeft} {r.daysLeft <= 15 ? ICONS["Alerta"] || "⚠️" : ""} días restantes</h4>
-
+                                        <h4
+                                            className={`${styles["days-lefts"]} ${r.daysLeft <= 15 ? styles.emergencyLight : ""}`}
+                                        >
+                                            {r.daysLeft === 0 ? "¡Es HOY!" : `${r.daysLeft} días restantes`}
+                                        </h4>
                                         <button
                                             className="btn btn-sm btn-outline-danger mt-2"
                                             onClick={() => onDeleteReminder(r.id)}
